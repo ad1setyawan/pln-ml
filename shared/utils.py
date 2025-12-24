@@ -163,10 +163,10 @@ def encode_classes(
     print(f"Active classes for training: {active_classes}")
     print(f"Label mapping: {label_mapping}")
 
-    # Warning if config classes don't match data classes
+    # Error if config classes don't match data classes
     if set(classes) != set(unique_classes_in_data):
         print("\n" + "="*60)
-        print("WARNING: Class mismatch detected!")
+        print("ERROR: Class mismatch detected!")
         print("="*60)
         print(f"Defined classes in config: {classes}")
         print(f"Classes found in training data: {unique_classes_in_data}")
@@ -176,11 +176,16 @@ def encode_classes(
 
         if missing_in_data:
             print(f"Classes in config but NOT in data: {missing_in_data}")
+            print("Action: Add training data with these classes, OR update config to remove them")
         if extra_in_data:
             print(f"Classes in data but NOT in config: {extra_in_data}")
+            print("Action: Add these classes to config, OR remove them from training data")
 
-        print(f"Model will be trained with {len(active_classes)} classes: {active_classes}")
-        print("="*60 + "\n")
+        print("\nTraining STOPPED due to class mismatch!")
+        print("Reason: Model trained with incomplete classes will FAIL at inference time")
+        print("       when encountering data with missing classes.")
+        print("="*60)
+        sys.exit(1)
 
     return active_classes, label_mapping, y_encoded
 

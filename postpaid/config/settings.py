@@ -2,11 +2,7 @@
 settings.py
 Central configuration for anomaly detection ML pipeline
 """
-
-# =========================================================
-# FEATURE SPECIFICATION
-# =========================================================
-
+# Only information
 FEATURE_SPEC = {
     'pemakaian': {
         'type': 'numeric',
@@ -30,19 +26,14 @@ FEATURE_SPEC = {
     },
 }
 
-# =========================================================
-# MODEL / TARGET CONFIGURATION
-# 1 target = 1 model
-# =========================================================
-
 MODEL_CONFIGS = {
 
     'anomaly_score': {
         'task': 'regression',
         'features': ['pemakaian', 'baseline'],
         'model_family': 'tree',
-        'postprocess': ['clip_0_1'],
-        'description': 'Deviation score between actual usage and baseline',
+        'postprocess': ['clip_0_100'],
+        'description': 'Deviation score between actual usage and baseline (0-100)',
     },
 
     'is_anomaly': {
@@ -85,11 +76,6 @@ MODEL_CONFIGS = {
     },
 }
 
-# =========================================================
-# PIPELINE EXECUTION ORDER
-# (dependency-safe)
-# =========================================================
-
 PIPELINE_ORDER = [
     'anomaly_score',
     'is_anomaly',
@@ -100,35 +86,11 @@ PIPELINE_ORDER = [
     'severity_level',
 ]
 
-# =========================================================
-# GLOBAL TRAINING SETTINGS
-# =========================================================
-
 TRAINING_SETTINGS = {
     'train_test_split': 0.8,
     'random_state': 42,
     'cross_validation_folds': 5,
 }
 
-# =========================================================
-# GLOBAL INFERENCE SETTINGS
-# =========================================================
-
-INFERENCE_SETTINGS = {
-    'fail_on_missing_feature': True,
-    'default_output_on_error': None,
-}
-
-# =========================================================
-# MONITORING & EVALUATION
-# =========================================================
-
-MONITORING_SETTINGS = {
-    'enable_drift_detection': True,
-    'default_metrics': {
-        'regression': ['mae', 'rmse'],
-        'binary_classification': ['precision', 'recall', 'f1'],
-        'multiclass_classification': ['accuracy', 'f1_macro'],
-        'ordinal_classification': ['accuracy'],
-    },
-}
+MODEL_VERSION = "v1"
+DEFAULT_TRAIN_DATA = "train.csv"

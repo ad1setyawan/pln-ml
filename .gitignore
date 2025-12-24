@@ -1,0 +1,6 @@
+venv
+*.pkl
+postpaid/models/*.pkl
+__pycache__/
+*.pyc
+.DS_Store

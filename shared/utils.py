@@ -185,6 +185,32 @@ def encode_classes(
     return active_classes, label_mapping, y_encoded
 
 
+def get_class_predictions(model, X: pd.DataFrame) -> np.ndarray:
+    """
+    Get class predictions from a classification model.
+
+    Handles cases where model.predict() returns probabilities instead of class labels.
+
+    Args:
+        model: Trained classification model
+        X: Feature DataFrame
+
+    Returns:
+        Array of class labels (not probabilities)
+    """
+    predictions_proba = model.predict(X)
+
+    # Check if predict returns probabilities (2D array with multiple columns)
+    if len(predictions_proba.shape) > 1 and predictions_proba.shape[1] > 1:
+        # If predict returns probabilities, take argmax to get class labels
+        predictions = predictions_proba.argmax(axis=1)
+    else:
+        # If predict already returns class labels
+        predictions = predictions_proba
+
+    return predictions
+
+
 def print_training_summary(summary: dict, total_time: float) -> None:
     """
     Print training summary in a formatted way.

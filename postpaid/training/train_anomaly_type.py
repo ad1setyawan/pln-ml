@@ -21,7 +21,7 @@ from config.settings import MODEL_CONFIGS, TRAINING_SETTINGS, DEFAULT_TRAIN_DATA
 root_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(root_dir))
 
-from shared.utils import load_training_data, save_model, validate_features_and_target, validate_pipeline_order, encode_classes, print_training_summary
+from shared.utils import load_training_data, save_model, validate_features_and_target, validate_pipeline_order, encode_classes, get_class_predictions, print_training_summary
 
 MODEL_NAME = 'anomaly_type'
 
@@ -92,14 +92,7 @@ def train_anomaly_type_model(df: pd.DataFrame, model_dir: str) -> dict:
     importance = model.feature_importances_
 
     # Model predictions on training data for metrics
-    # Get class predictions (not probabilities)
-    predictions_proba = model.predict(X)
-    if len(predictions_proba.shape) > 1 and predictions_proba.shape[1] > 1:
-        # If predict returns probabilities, take argmax to get class labels
-        predictions = predictions_proba.argmax(axis=1)
-    else:
-        # If predict already returns class labels
-        predictions = predictions_proba
+    predictions = get_class_predictions(model, X)
 
     # Calculate metrics
     accuracy = np.mean(y == predictions)

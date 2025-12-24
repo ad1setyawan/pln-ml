@@ -15,13 +15,13 @@ import xgboost as xgb
 # Add parent directory to path to import config
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from config.settings import MODEL_CONFIGS, TRAINING_SETTINGS, DEFAULT_TRAIN_DATA, MODEL_VERSION
+from config.settings import MODEL_CONFIGS, TRAINING_SETTINGS, DEFAULT_TRAIN_DATA, MODEL_VERSION, PIPELINE_ORDER, FEATURE_SPEC
 
 # Add root directory to path to import shared utilities
 root_dir = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(root_dir))
 
-from shared.utils import load_training_data, save_model
+from shared.utils import load_training_data, save_model, validate_features_and_target, validate_pipeline_order
 
 MODEL_NAME = 'anomaly_score'
 
@@ -44,6 +44,15 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
     print(f"Model: {MODEL_NAME}")
     print(f"Features: {features}")
     print(f"Target: {target}")
+
+    # Validate pipeline order
+    print("Validating pipeline order...")
+    validate_pipeline_order(features, target, PIPELINE_ORDER, FEATURE_SPEC)
+
+    # Validate features and target exist in data
+    print("Validating features and target in training data...")
+    validate_features_and_target(df, features, target)
+    print("Validation successful\n")
 
     # Extract features and target
     X = df[features]
@@ -70,6 +79,7 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
     # Save the model
     print("Saving the trained model...")
     model_path, file_size_kb = save_model(model, model_dir, MODEL_NAME)
+    print("Model saved")
 
     # Feature importance
     importance = model.feature_importances_

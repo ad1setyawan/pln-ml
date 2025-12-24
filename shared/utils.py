@@ -5,8 +5,9 @@ Shared utilities for the project
 import os
 import sys
 import pandas as pd
+import numpy as np
 import joblib
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 
 def load_training_data(data_path: str) -> pd.DataFrame:
@@ -124,3 +125,102 @@ def save_model(model, model_dir: str, model_name: str) -> tuple:
     file_size_kb = round(file_size / 1024, 2)
 
     return model_path, file_size_kb
+
+
+def encode_classes(
+    df: pd.DataFrame,
+    target: str,
+    classes: List[str]
+) -> Tuple[List[str], Dict[str, int], pd.Series]:
+    """
+    Encode target classes to consecutive integers for multiclass classification.
+
+    Handles cases where training data doesn't contain all classes defined in config.
+    Creates a warning if there's a mismatch between config and actual data.
+
+    Args:
+        df: Training DataFrame
+        target: Target column name
+        classes: List of class names defined in config
+
+    Returns:
+        Tuple of (active_classes, label_mapping, y_encoded):
+        - active_classes: List of classes actually present in data
+        - label_mapping: Dictionary mapping class names to integer labels
+        - y_encoded: Encoded target as pandas Series with integer labels
+    """
+    # Get unique classes actually present in training data
+    unique_classes_in_data = sorted(df[target].unique())
+
+    # Filter to only use classes that are actually present in data
+    # and create consecutive integer labels
+    active_classes = [c for c in classes if c in unique_classes_in_data]
+    label_mapping = {label: idx for idx, label in enumerate(active_classes)}
+    y_encoded = df[target].map(label_mapping).astype(int)
+
+    print(f"Classes defined in config: {classes}")
+    print(f"Classes actually in data: {unique_classes_in_data}")
+    print(f"Active classes for training: {active_classes}")
+    print(f"Label mapping: {label_mapping}")
+
+    # Warning if config classes don't match data classes
+    if set(classes) != set(unique_classes_in_data):
+        print("\n" + "="*60)
+        print("WARNING: Class mismatch detected!")
+        print("="*60)
+        print(f"Defined classes in config: {classes}")
+        print(f"Classes found in training data: {unique_classes_in_data}")
+
+        missing_in_data = set(classes) - set(unique_classes_in_data)
+        extra_in_data = set(unique_classes_in_data) - set(classes)
+
+        if missing_in_data:
+            print(f"Classes in config but NOT in data: {missing_in_data}")
+        if extra_in_data:
+            print(f"Classes in data but NOT in config: {extra_in_data}")
+
+        print(f"Model will be trained with {len(active_classes)} classes: {active_classes}")
+        print("="*60 + "\n")
+
+    return active_classes, label_mapping, y_encoded
+
+
+def print_training_summary(summary: dict, total_time: float) -> None:
+    """
+    Print training summary in a formatted way.
+
+    Args:
+        summary: Dictionary containing training summary
+        total_time: Total execution time in seconds
+    """
+    print("\n" + "="*60)
+    print("TRAINING SUMMARY")
+    print("="*60)
+    print(f"\nModel: {summary['model_name']}")
+    print(f"Training time: {summary['training_time_seconds']}s ({summary['training_time_seconds']/60:.2f} min)")
+    print(f"Total execution time: {total_time:.2f}s ({total_time/60:.2f} min)")
+    print(f"Model path: {summary['model_path']}")
+    print(f"Model size: {summary['model_size_kb']} KB")
+
+    # Print class info for classification models
+    if 'classes' in summary:
+        print(f"Classes: {summary['classes']}")
+        if 'label_mapping' in summary:
+            print(f"Label mapping: {summary['label_mapping']}")
+
+    print(f"\nDataset info:")
+    print(f"  - Number of samples: {summary['n_samples']}")
+    print(f"  - Number of features: {summary['n_features']}")
+    print(f"  - Features: {summary['feature_names']}")
+
+    print(f"\nPerformance metrics:")
+    for metric_name, value in summary['metrics'].items():
+        print(f"  - {metric_name}: {value}")
+
+    print(f"\nFeature importance:")
+    for feat, imp in summary['feature_importance'].items():
+        print(f"  - {feat}: {imp}")
+
+    print("\n" + "="*60)
+    print("TRAINING COMPLETED SUCCESSFULLY!")
+    print("="*60)

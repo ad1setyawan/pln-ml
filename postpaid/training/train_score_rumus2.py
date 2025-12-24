@@ -1,6 +1,6 @@
 """
-Training script for anomaly_score model
-Usage: python postpaid/training/train_anomaly_score.py
+Training script for score_rumus2 model
+Usage: python postpaid/training/train_score_rumus2.py
 """
 
 import os
@@ -23,11 +23,11 @@ sys.path.insert(0, str(root_dir))
 
 from shared.utils import load_training_data, save_model, validate_features_and_target, validate_pipeline_order, print_training_summary
 
-MODEL_NAME = 'anomaly_score'
+MODEL_NAME = 'score_rumus2'
 
-def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
+def train_score_rumus2_model(df: pd.DataFrame, model_dir: str) -> dict:
     """
-    Train the anomaly_score model and save it.
+    Train the score_rumus2 model and save it.
 
     Args:
         df: Training DataFrame
@@ -39,7 +39,7 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
     # Get model configuration
     model_config = MODEL_CONFIGS[MODEL_NAME]
     features = model_config['features']
-    target = MODEL_NAME  # Target is the same as model name
+    target = MODEL_NAME
 
     print(f"Model: {MODEL_NAME}")
     print(f"Features: {features}")
@@ -75,6 +75,7 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
     model.fit(X, y)
 
     training_time = time.time() - training_start
+    print(f"Training completed in {training_time:.2f}s")
 
     # Save the model
     print("Saving the trained model...")
@@ -142,7 +143,7 @@ def main():
     print(f"Loaded {len(df)} records\n")
 
     # Train model
-    summary = train_anomaly_score_model(df, model_dir)
+    summary = train_score_rumus2_model(df, model_dir)
 
     # Final summary
     total_time = time.time() - start_time

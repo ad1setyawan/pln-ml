@@ -1,6 +1,6 @@
 """
-Training script for anomaly_score model
-Usage: python postpaid/training/train_anomaly_score.py
+Training script for is_anomaly model
+Usage: python postpaid/training/train_is_anomaly.py
 """
 
 import os
@@ -23,11 +23,11 @@ sys.path.insert(0, str(root_dir))
 
 from shared.utils import load_training_data, save_model, validate_features_and_target, validate_pipeline_order, print_training_summary
 
-MODEL_NAME = 'anomaly_score'
+MODEL_NAME = 'is_anomaly'
 
-def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
+def train_is_anomaly_model(df: pd.DataFrame, model_dir: str) -> dict:
     """
-    Train the anomaly_score model and save it.
+    Train the is_anomaly model and save it.
 
     Args:
         df: Training DataFrame
@@ -39,7 +39,7 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
     # Get model configuration
     model_config = MODEL_CONFIGS[MODEL_NAME]
     features = model_config['features']
-    target = MODEL_NAME  # Target is the same as model name
+    target = MODEL_NAME
 
     print(f"Model: {MODEL_NAME}")
     print(f"Features: {features}")
@@ -56,16 +56,16 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
 
     # Extract features and target
     X = df[features]
-    y = df[target]
+    y = df[target].astype(int)  # Binary classification needs integer labels
 
-    # Initialize XGBoost regressor
+    # Initialize XGBoost classifier
     random_state = TRAINING_SETTINGS.get('random_state', 42)
-    model = xgb.XGBRegressor(
+    model = xgb.XGBClassifier(
         random_state=random_state,
         n_estimators=100,
         learning_rate=0.1,
         max_depth=6,
-        objective='reg:squarederror'
+        objective='binary:logistic'
     )
 
     # Train the model
@@ -75,6 +75,7 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
     model.fit(X, y)
 
     training_time = time.time() - training_start
+    print(f"Training completed in {training_time:.2f}s")
 
     # Save the model
     print("Saving the trained model...")
@@ -85,12 +86,17 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
     importance = model.feature_importances_
 
     # Model predictions on training data for metrics
-    predictions = model.predict(X)
+    # Get class predictions (not probabilities)
+    predictions_proba = model.predict(X)
+    if len(predictions_proba.shape) > 1 and predictions_proba.shape[1] > 1:
+        # If predict returns probabilities, take argmax to get class labels
+        predictions = predictions_proba.argmax(axis=1)
+    else:
+        # If predict already returns class labels
+        predictions = predictions_proba
 
     # Calculate metrics
-    mae = np.mean(np.abs(y - predictions))
-    rmse = np.sqrt(np.mean((y - predictions)**2))
-    mape = np.mean(np.abs((y - predictions) / (y + 1e-8))) * 100
+    accuracy = np.mean(y == predictions)
 
     # Prepare summary dictionary
     summary = {
@@ -102,9 +108,7 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
         'n_features': len(features),
         'feature_names': features,
         'metrics': {
-            'mae': round(mae, 4),
-            'rmse': round(rmse, 4),
-            'mape': round(mape, 2)
+            'accuracy': round(accuracy, 4)
         },
         'feature_importance': dict(zip(features, [round(imp, 4) for imp in importance])),
         'hyperparameters': {
@@ -142,7 +146,7 @@ def main():
     print(f"Loaded {len(df)} records\n")
 
     # Train model
-    summary = train_anomaly_score_model(df, model_dir)
+    summary = train_is_anomaly_model(df, model_dir)
 
     # Final summary
     total_time = time.time() - start_time

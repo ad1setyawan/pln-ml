@@ -6,12 +6,16 @@ from .utils import (
     load_training_data,
     save_model,
     validate_features_and_target,
-    validate_pipeline_order
+    validate_pipeline_order,
+    encode_classes,
+    print_training_summary
 )
 
 __all__ = [
     'load_training_data',
     'save_model',
     'validate_features_and_target',
-    'validate_pipeline_order'
+    'validate_pipeline_order',
+    'encode_classes',
+    'print_training_summary'
 ]

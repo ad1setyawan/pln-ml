@@ -60,13 +60,14 @@ def train_final_score_rumus1_model(df: pd.DataFrame, model_dir: str) -> dict:
 
     # Initialize XGBoost regressor
     random_state = TRAINING_SETTINGS.get('random_state', 42)
-    model = xgb.XGBRegressor(
-        random_state=random_state,
-        n_estimators=100,
-        learning_rate=0.1,
-        max_depth=6,
-        objective='reg:squarederror'
-    )
+    hyperparameters = {
+        'random_state': random_state,
+        'n_estimators': 100,
+        'learning_rate': 0.1,
+        'max_depth': 6,
+        'objective': 'reg:squarederror'
+    }
+    model = xgb.XGBRegressor(**hyperparameters)
 
     # Train the model
     print("Starting model training...")
@@ -108,12 +109,7 @@ def train_final_score_rumus1_model(df: pd.DataFrame, model_dir: str) -> dict:
             'mape': round(mape, 2)
         },
         'feature_importance': dict(zip(features, [round(imp, 4) for imp in importance])),
-        'hyperparameters': {
-            'n_estimators': 100,
-            'learning_rate': 0.1,
-            'max_depth': 6,
-            'random_state': random_state
-        }
+        'hyperparameters': hyperparameters
     }
 
     return summary

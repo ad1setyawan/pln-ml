@@ -60,13 +60,14 @@ def train_is_anomaly_model(df: pd.DataFrame, model_dir: str) -> dict:
 
     # Initialize XGBoost classifier
     random_state = TRAINING_SETTINGS.get('random_state', 42)
-    model = xgb.XGBClassifier(
-        random_state=random_state,
-        n_estimators=100,
-        learning_rate=0.1,
-        max_depth=6,
-        objective='binary:logistic'
-    )
+    hyperparameters = {
+        'random_state': random_state,
+        'n_estimators': 100,
+        'learning_rate': 0.1,
+        'max_depth': 6,
+        'objective': 'binary:logistic'
+    }
+    model = xgb.XGBClassifier(**hyperparameters)
 
     # Train the model
     print("Starting model training...")
@@ -111,12 +112,7 @@ def train_is_anomaly_model(df: pd.DataFrame, model_dir: str) -> dict:
             'accuracy': round(accuracy, 4)
         },
         'feature_importance': dict(zip(features, [round(imp, 4) for imp in importance])),
-        'hyperparameters': {
-            'n_estimators': 100,
-            'learning_rate': 0.1,
-            'max_depth': 6,
-            'random_state': random_state
-        }
+        'hyperparameters': hyperparameters
     }
 
     return summary

@@ -19,7 +19,7 @@ python postpaid/training/train_severity_level.py
 
 ## Available Inference Scripts
 
-### 1. Anomaly Score Prediction
+### Anomaly Score Prediction
 
 **Script:** `predict_anomaly_score.py`
 
@@ -49,7 +49,10 @@ python postpaid/inferences/predict_anomaly_score.py --pemakaian 45.0 --baseline 
 - Anomaly score (0-100)
 - Whether business rule was applied
 - Interpretation of the score
-- Status classification (NORMAL, SLIGHT DEVIATION, MODERATE ANOMALY, HIGH ANOMALY)
+- Status classification:
+  - NORMAL: score < 20 (consumption very close to baseline)
+  - SLIGHT DEVIATION: 20 <= score <= 30
+  - **IS ANOMALY: score > 30** (investigation strongly recommended)
 
 **Features:**
 - `pemakaian`: Actual electricity consumption (kWh)

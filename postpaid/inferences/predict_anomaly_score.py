@@ -265,11 +265,30 @@ def main():
         print(f"  - Business Rule Applied: pemakaian >= baseline")
         print(f"  - Note: {result['note']}")
         print(f"  - Final anomaly score: {result['final_prediction']} (0-100 scale)")
+        print(f"\nInterpretation:")
+        print(f"  - Status: NORMAL")
+        print(f"  - Consumption is normal or higher than baseline")
+        print(f"  - No anomaly detection needed")
     else:
         print(f"  - Raw prediction: {result['raw_prediction']}")
         if result['postprocessing']:
             print(f"  - Postprocessing applied: {result['postprocessing']}")
         print(f"  - Final anomaly score: {result['final_prediction']} (0-100 scale)")
+
+        # Interpretation
+        score = result['final_prediction']
+        print(f"\nInterpretation:")
+        if score < 20:
+            print(f"  - Status: NORMAL")
+            print(f"  - Actual consumption is very close to baseline")
+        elif score <= 30:
+            print(f"  - Status: SLIGHT DEVIATION")
+            print(f"  - Actual consumption differs somewhat from baseline")
+        else:
+            print(f"  - Status: IS ANOMALY")
+            print(f"  - Anomaly score > 30: Investigation strongly recommended")
+            print(f"  - Severe deviation from baseline detected")
+
     print("="*60)
 
 

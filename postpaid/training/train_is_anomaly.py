@@ -16,12 +16,7 @@ import xgboost as xgb
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config.settings import MODEL_CONFIGS, TRAINING_SETTINGS, DEFAULT_TRAIN_DATA, MODEL_VERSION, PIPELINE_ORDER, FEATURE_SPEC
-
-# Add root directory to path to import shared utilities
-root_dir = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(root_dir))
-
-from shared.utils import load_training_data, save_model, validate_features_and_target, validate_pipeline_order, get_class_predictions, print_training_summary
+from training.utils import load_training_data, save_model, validate_features_and_target, validate_pipeline_order, get_class_predictions, print_training_summary
 
 MODEL_NAME = 'is_anomaly'
 

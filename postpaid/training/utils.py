@@ -1,5 +1,5 @@
 """
-Shared utilities for the project
+Training utilities for postpaid models
 """
 
 import os

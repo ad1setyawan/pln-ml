@@ -40,6 +40,18 @@ def train_anomaly_score_model(df: pd.DataFrame, model_dir: str) -> dict:
     print(f"Features: {features}")
     print(f"Target: {target}")
 
+    # Data preprocessing: Remove rows with non-positive baseline
+    print("Preprocessing data...")
+    df = df[df['baseline'] > 0].copy()  # Create a copy to avoid SettingWithCopyWarning
+    print(f"Removed rows with non-positive baseline")
+
+    # Feature Engineering (before validation)
+    print("Performing feature engineering...")
+    df['ratio'] = df['pemakaian'] / (df['baseline'] + 1)
+    df['diff'] = df['baseline'] - df['pemakaian']
+    df['is_over_baseline'] = (df['pemakaian'] > df['baseline']).astype(int)
+    print(f"Added features: ratio, diff, is_over_baseline")
+
     # Validate pipeline order
     print("Validating pipeline order...")
     validate_pipeline_order(features, target, PIPELINE_ORDER, FEATURE_SPEC)

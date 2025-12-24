@@ -37,41 +37,95 @@ def load_model(model_path: str):
     return model
 
 
-def validate_input(features: dict, model_config: dict) -> None:
+def get_base_features(model_features: list) -> list:
     """
-    Validate that all required features are present.
+    Get base features (non-derived) from model feature list.
 
     Args:
-        features: Dictionary of feature names and values
+        model_features: List of all features used by model
+
+    Returns:
+        List of base features that user needs to provide
+    """
+    from config.settings import FEATURE_SPEC
+
+    base_features = []
+    for feat in model_features:
+        feat_spec = FEATURE_SPEC.get(feat, {})
+        # If feature has 'derived_from', it's a derived feature
+        if 'derived_from' not in feat_spec:
+            base_features.append(feat)
+
+    return base_features
+
+
+def validate_input(features: dict, model_config: dict) -> None:
+    """
+    Validate that all required base features are present.
+
+    Args:
+        features: Dictionary of feature names and values (only base features needed)
         model_config: Model configuration dictionary
 
     Raises:
         SystemExit: If validation fails
     """
-    required_features = model_config['features']
-    missing_features = [feat for feat in required_features if feat not in features]
+    # Get base features dynamically (non-derived features)
+    base_features = get_base_features(model_config['features'])
+    missing_features = [feat for feat in base_features if feat not in features]
 
     if missing_features:
         print(f"Error: Missing required features: {missing_features}")
-        print(f"Required features: {required_features}")
+        print(f"Required features: {base_features}")
         sys.exit(1)
+
+
+def compute_derived_features(features: dict) -> dict:
+    """
+    Compute derived features from base features.
+
+    Args:
+        features: Dictionary of base feature names and values
+
+    Returns:
+        Dictionary with all features (base + derived)
+    """
+    result = features.copy()
+
+    # Compute ratio = pemakaian / (baseline + 1)
+    if 'pemakaian' in features and 'baseline' in features:
+        result['ratio'] = features['pemakaian'] / (features['baseline'] + 1)
+
+    # Compute diff = baseline - pemakaian
+    if 'pemakaian' in features and 'baseline' in features:
+        result['diff'] = features['baseline'] - features['pemakaian']
+
+    # Compute is_over_baseline = pemakaian > baseline
+    if 'pemakaian' in features and 'baseline' in features:
+        result['is_over_baseline'] = 1 if features['pemakaian'] > features['baseline'] else 0
+
+    return result
 
 
 def preprocess_input(features: dict) -> pd.DataFrame:
     """
     Convert input features to DataFrame format expected by model.
+    Performs feature engineering to create all required features.
 
     Args:
-        features: Dictionary of feature names and values
+        features: Dictionary of base feature names and values
 
     Returns:
-        DataFrame with features in correct order
+        DataFrame with features in correct order (including engineered features)
     """
     model_config = MODEL_CONFIGS[MODEL_NAME]
     feature_order = model_config['features']
 
+    # Compute derived features from base features
+    all_features = compute_derived_features(features)
+
     # Create DataFrame with features in correct order
-    X = pd.DataFrame([[features[feat] for feat in feature_order]], columns=feature_order)
+    X = pd.DataFrame([[all_features[feat] for feat in feature_order]], columns=feature_order)
     return X
 
 
@@ -211,10 +265,6 @@ def main():
         print(f"  - Business Rule Applied: pemakaian >= baseline")
         print(f"  - Note: {result['note']}")
         print(f"  - Final anomaly score: {result['final_prediction']} (0-100 scale)")
-        print(f"\nInterpretation:")
-        print(f"  - Status: NORMAL")
-        print(f"  - Consumption is normal or higher than baseline")
-        print(f"  - No anomaly detection needed")
     else:
         print(f"  - Raw prediction: {result['raw_prediction']}")
         if result['postprocessing']:

@@ -24,13 +24,29 @@ FEATURE_SPEC = {
         'type': 'integer',
         'required': True,
     },
+    # Derived features for anomaly_score (computed from pemakaian & baseline)
+    'ratio': {
+        'type': 'numeric',
+        'required': False,  # Computed from pemakaian / (baseline + 1)
+        'derived_from': ['pemakaian', 'baseline']
+    },
+    'diff': {
+        'type': 'numeric',
+        'required': False,  # Computed from baseline - pemakaian
+        'derived_from': ['pemakaian', 'baseline']
+    },
+    'is_over_baseline': {
+        'type': 'integer',
+        'required': False,  # Computed from pemakaian > baseline
+        'derived_from': ['pemakaian', 'baseline']
+    },
 }
 
 MODEL_CONFIGS = {
 
     'anomaly_score': {
         'task': 'regression',
-        'features': ['pemakaian', 'baseline'],
+        'features': ['pemakaian', 'baseline', 'ratio', 'diff', 'is_over_baseline'],
         'model_family': 'tree',
         'postprocess': ['clip_0_100'],
         'description': 'Deviation score between actual usage and baseline (0-100)',

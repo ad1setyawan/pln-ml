@@ -65,7 +65,7 @@ MODEL_CONFIGS = {
 
     'is_anomaly': {
         'task': 'binary_classification',
-        'features': ['anomaly_score', 'threshold_drop_consume'],
+        'features': ['anomaly_score'],
         'threshold': 0.5,
         'description': 'Binary anomaly decision',
     },

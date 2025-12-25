@@ -60,8 +60,10 @@ MODEL_CONFIGS = {
     },
 
     'final_score_rumus1': {
-        'task': 'regression',
-        'features': ['anomaly_score', 'consecutive_anomaly_count'],
+        'task': 'multiclass_classification',
+        'features': ['consecutive_anomaly_count'],
+        'classes': [0, 20, 40, 60],
+        'model_family': 'tree',
         'description': 'Severity score based on anomaly persistence',
     },
 

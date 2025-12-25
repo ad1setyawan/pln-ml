@@ -16,7 +16,7 @@ import xgboost as xgb
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from config.settings import MODEL_CONFIGS, TRAINING_SETTINGS, DEFAULT_TRAIN_DATA, MODEL_VERSION, PIPELINE_ORDER, FEATURE_SPEC
-from training.utils import load_training_data, save_model, validate_features_and_target, validate_pipeline_order, print_training_summary
+from training.utils import load_training_data, save_model, validate_features_and_target, validate_pipeline_order, encode_classes, get_class_predictions, print_training_summary
 
 MODEL_NAME = 'final_score_rumus1'
 
@@ -35,10 +35,12 @@ def train_final_score_rumus1_model(df: pd.DataFrame, model_dir: str) -> dict:
     model_config = MODEL_CONFIGS[MODEL_NAME]
     features = model_config['features']
     target = MODEL_NAME
+    classes = model_config['classes']
 
     print(f"Model: {MODEL_NAME}")
     print(f"Features: {features}")
     print(f"Target: {target}")
+    print(f"Classes: {classes}")
 
     # Validate pipeline order
     print("Validating pipeline order...")
@@ -49,20 +51,23 @@ def train_final_score_rumus1_model(df: pd.DataFrame, model_dir: str) -> dict:
     validate_features_and_target(df, features, target)
     print("Validation successful\n")
 
-    # Extract features and target
+    # Extract features
     X = df[features]
-    y = df[target]
 
-    # Initialize XGBoost regressor
+    # Encode target classes to consecutive integers
+    active_classes, label_mapping, y = encode_classes(df, target, classes)
+
+    # Initialize XGBoost classifier
     random_state = TRAINING_SETTINGS.get('random_state', 42)
     hyperparameters = {
         'random_state': random_state,
         'n_estimators': 100,
         'learning_rate': 0.1,
         'max_depth': 6,
-        'objective': 'reg:squarederror'
+        'objective': 'multi:softprob',
+        'num_class': len(active_classes)
     }
-    model = xgb.XGBRegressor(**hyperparameters)
+    model = xgb.XGBClassifier(**hyperparameters)
 
     # Train the model
     print("Starting model training...")
@@ -82,12 +87,10 @@ def train_final_score_rumus1_model(df: pd.DataFrame, model_dir: str) -> dict:
     importance = model.feature_importances_
 
     # Model predictions on training data for metrics
-    predictions = model.predict(X)
+    predictions = get_class_predictions(model, X)
 
     # Calculate metrics
-    mae = np.mean(np.abs(y - predictions))
-    rmse = np.sqrt(np.mean((y - predictions)**2))
-    mape = np.mean(np.abs((y - predictions) / (y + 1e-8))) * 100
+    accuracy = np.mean(y == predictions)
 
     # Prepare summary dictionary
     summary = {
@@ -98,10 +101,10 @@ def train_final_score_rumus1_model(df: pd.DataFrame, model_dir: str) -> dict:
         'n_samples': len(df),
         'n_features': len(features),
         'feature_names': features,
+        'classes': active_classes,
+        'label_mapping': label_mapping,
         'metrics': {
-            'mae': round(mae, 4),
-            'rmse': round(rmse, 4),
-            'mape': round(mape, 2)
+            'accuracy': round(accuracy, 4)
         },
         'feature_importance': dict(zip(features, [round(imp, 4) for imp in importance])),
         'hyperparameters': hyperparameters

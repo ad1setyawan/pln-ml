@@ -86,9 +86,11 @@ MODEL_CONFIGS = {
     },
 
     'final_score_rumus2': {
-        'task': 'regression',
+        'task': 'ordinal_classification',
         'features': ['score_rumus2'],
-        'description': 'Normalized contextual score',
+        'classes': [0, 10, 20, 30, 40],
+        'model_family': 'tree',
+        'description': 'Severity score based on gardu deviation percentage (grouped by rule)',
     },
 
     'anomaly_type': {

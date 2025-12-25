@@ -44,6 +44,12 @@ def train_score_rumus2_model(df: pd.DataFrame, model_dir: str) -> dict:
     print("Validating pipeline order...")
     validate_pipeline_order(features, target, PIPELINE_ORDER, FEATURE_SPEC)
 
+    # Feature Engineering (before validation)
+    print("Performing feature engineering...")
+    df['ratio_gardu'] = df['pemakaian'] / (df['avg_pemakaian_gardu'] + 1)
+    df['pct_diff_gardu'] = (df['pemakaian'] - df['avg_pemakaian_gardu']) / (df['avg_pemakaian_gardu'] + 1)
+    print(f"Added features: ratio_gardu, pct_diff_gardu")
+
     # Validate features and target exist in data
     print("Validating features and target in training data...")
     validate_features_and_target(df, features, target)

@@ -40,6 +40,17 @@ FEATURE_SPEC = {
         'required': False,  # Computed from pemakaian > baseline
         'derived_from': ['pemakaian', 'baseline']
     },
+    # Derived features for score_rumus2 (computed from pemakaian & avg_pemakaian_gardu)
+    'ratio_gardu': {
+        'type': 'numeric',
+        'required': False,  # Computed from pemakaian / (avg_pemakaian_gardu + 1)
+        'derived_from': ['pemakaian', 'avg_pemakaian_gardu']
+    },
+    'pct_diff_gardu': {
+        'type': 'numeric',
+        'required': False,  # Computed from (pemakaian - avg_pemakaian_gardu) / (avg_pemakaian_gardu + 1)
+        'derived_from': ['pemakaian', 'avg_pemakaian_gardu']
+    },
 }
 
 MODEL_CONFIGS = {
@@ -69,7 +80,8 @@ MODEL_CONFIGS = {
 
     'score_rumus2': {
         'task': 'regression',
-        'features': ['avg_pemakaian_gardu', 'pemakaian'],
+        'features': ['ratio_gardu', 'pct_diff_gardu'],
+        'model_family': 'tree',
         'description': 'Contextual score compared to gardu average',
     },
 

@@ -71,7 +71,7 @@ MODEL_CONFIGS = {
     },
 
     'final_score_rumus1': {
-        'task': 'multiclass_classification',
+        'task': 'ordinal_classification',
         'features': ['consecutive_anomaly_count'],
         'classes': [0, 20, 40, 60],
         'model_family': 'tree',

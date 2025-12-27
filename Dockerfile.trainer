@@ -1,0 +1,36 @@
+# Dockerfile for Training Environment
+# Build: docker build -f Dockerfile.trainer -t pln-ml-trainer .
+# Run: docker run -it --rm -v $(pwd)/data:/app/data pln-ml-trainer bash
+# Then inside container: python postpaid/training/train_anomaly_score.py
+
+FROM python:3.12-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies for ML libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create directories for models if they don't exist
+RUN mkdir -p postpaid/models/v1 prepaid/models/v1
+
+# Set default command to bash (so you can run training scripts manually)
+CMD ["bash"]

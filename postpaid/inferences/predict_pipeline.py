@@ -204,8 +204,6 @@ def run_pipeline(features: Dict[str, Any], model_dir: str = None) -> Dict[str, A
     # Add final summary
     results['summary'] = {
         'anomaly_detected': intermediate_predictions.get('is_anomaly', False),
-        'final_severity_level': intermediate_predictions.get('severity_level', None),
-        'root_cause': intermediate_predictions.get('anomaly_type', None),
         'persistence_score': intermediate_predictions.get('final_score_rumus1', None),
         'gardu_deviation_score': intermediate_predictions.get('final_score_rumus2', None)
     }
@@ -273,26 +271,14 @@ def print_pipeline_results(results: Dict[str, Any]):
     is_anomaly = summary.get('anomaly_detected', False)
     print(f"\nAnomaly Detected: {'🔴 YES' if is_anomaly else '🟢 NO'}")
 
-    # Severity level
-    severity = summary.get('final_severity_level')
-    if severity:
-        severity_icons = {'low': '🔵', 'medium': '🟢', 'high': '🟡', 'critical': '🔴'}
-        icon = severity_icons.get(severity, '⚪')
-        print(f"Severity Level: {icon} {severity.upper()}")
-
-    # Root cause
-    root_cause = summary.get('root_cause')
-    if root_cause:
-        print(f"Root Cause: {root_cause.upper()}")
-
     # Scores
     persistence_score = summary.get('persistence_score')
     if persistence_score is not None:
-        print(f"Persistence Score: {persistence_score}")
+        print(f"Persistence Score (Rumus1): {persistence_score}")
 
     gardu_score = summary.get('gardu_deviation_score')
     if gardu_score is not None:
-        print(f"Gardu Deviation Score: {gardu_score}")
+        print(f"Gardu Deviation Score (Rumus2): {gardu_score}")
 
     # Recommendations
     print("\n" + "="*70)
@@ -302,35 +288,15 @@ def print_pipeline_results(results: Dict[str, Any]):
     if not is_anomaly:
         print("\n✅ No anomaly detected - Continue routine monitoring")
     else:
-        if severity == 'critical':
-            print("\n🚨 CRITICAL: Immediate investigation required!")
-            print("   - Priority: P1")
-            print("   - Action: Dispatch field team immediately")
-        elif severity == 'high':
-            print("\n⚠️  HIGH: Investigation recommended")
-            print("   - Priority: P2")
-            print("   - Action: Schedule investigation within 24 hours")
-        elif severity == 'medium':
-            print("\n⚡ MEDIUM: Increased monitoring needed")
-            print("   - Priority: P3")
-            print("   - Action: Monitor closely for next billing cycle")
-        else:
-            print("\n📝 LOW: Routine monitoring")
-            print("   - Priority: P4")
-            print("   - Action: Continue normal monitoring")
+        print("\n⚠️  Anomaly detected - Investigation recommended")
+        print("   - Review consumption patterns")
+        print("   - Check persistence score and gardu deviation")
 
-        if root_cause == 'baseline':
-            print("\n🔍 Root Cause: Customer baseline issue")
-            print("   - Check customer consumption history")
-            print("   - Verify baseline calculation")
-        elif root_cause == 'gardu':
-            print("\n🔍 Root Cause: Gardu/substation issue")
-            print("   - Investigate gardu infrastructure")
-            print("   - Check for area-wide problems")
-        elif root_cause == 'both':
-            print("\n🔍 Root Cause: Combined issue")
-            print("   - Investigate both customer and gardu levels")
-            print("   - Comprehensive assessment required")
+        if persistence_score is not None and persistence_score >= 40:
+            print("   - High persistence score indicates consistent anomaly")
+
+        if gardu_score is not None and gardu_score >= 30:
+            print("   - High gardu deviation detected - investigate area")
 
     print("\n" + "="*70)
 

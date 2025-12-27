@@ -92,20 +92,6 @@ MODEL_CONFIGS = {
         'model_family': 'tree',
         'description': 'Severity score based on gardu deviation percentage (grouped by rule)',
     },
-
-    'anomaly_type': {
-        'task': 'multiclass_classification',
-        'features': ['final_score_rumus1', 'final_score_rumus2'],
-        'classes': ['baseline', 'gardu', 'both', 'none'],
-        'description': 'Root cause classification',
-    },
-
-    'severity_level': {
-        'task': 'ordinal_classification',
-        'features': ['final_score_rumus1', 'final_score_rumus2'],
-        'classes': ['low', 'medium', 'high', 'critical'],
-        'description': 'Final severity categorization',
-    },
 }
 
 PIPELINE_ORDER = [
@@ -114,8 +100,6 @@ PIPELINE_ORDER = [
     'final_score_rumus1',
     'score_rumus2',
     'final_score_rumus2',
-    'anomaly_type',
-    'severity_level',
 ]
 
 TRAINING_SETTINGS = {

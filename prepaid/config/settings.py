@@ -5,28 +5,6 @@ Central configuration for anomaly detection ML pipeline - Prepaid
 
 # Input feature specifications
 FEATURE_SPEC = {
-    # Original table columns
-    'pemakaian': {
-        'type': 'numeric',
-        'required': True,
-        'description': 'Actual electricity consumption'
-    },
-    'baseline': {
-        'type': 'numeric',
-        'required': True,
-        'description': 'Expected/normal consumption level'
-    },
-    'avg_pemakaian_gardu': {
-        'type': 'numeric',
-        'required': True,
-        'description': 'Average consumption at the electrical substation'
-    },
-    'threshold_drop_consume': {
-        'type': 'numeric',
-        'required': True,
-        'description': 'Anomaly detection threshold'
-    },
-
     # 12-month historical features
     'avg_12m_pemakaian': {
         'type': 'numeric',
@@ -48,6 +26,23 @@ FEATURE_SPEC = {
         'required': True,
         'description': 'Average gap between transactions in days'
     },
+
+    # Additional features
+    'consecutive_anomaly_count': {
+        'type': 'integer',
+        'required': True,
+        'description': 'Number of consecutive anomalies observed'
+    },
+    'pemakaian': {
+        'type': 'numeric',
+        'required': True,
+        'description': 'Actual electricity consumption'
+    },
+    'avg_pemakaian_gardu': {
+        'type': 'numeric',
+        'required': True,
+        'description': 'Average consumption at the electrical substation'
+    },
 }
 
 # Model configurations for each target variable
@@ -63,79 +58,50 @@ MODEL_CONFIGS = {
         ],
         'model_family': 'tree',
         'threshold': 0.5,
-        'description': 'Binary classification for regular customer behavior pattern',
+        'description': 'Binary classification for regular customer behavior pattern (0=not regular, 1=regular)',
     },
 
-    # Stage 2: Anomaly scoring
+    # Stage 2: Final score rumus 1
+    # Classes depend on is_rutin:
+    # - if is_rutin=1: [0, 20, 40, 60]
+    # - if is_rutin=0: [0, 20, 30, 40]
+    'final_score_rumus1': {
+        'task': 'ordinal_classification',
+        'features': ['is_rutin', 'consecutive_anomaly_count'],  # is_rutin as conditional feature
+        'model_family': 'tree',
+        'classes': [0, 20, 30, 40, 60],  # All possible classes (union of both conditions)
+        'description': 'Ordinal score based on consecutive anomaly count. Classes differ by is_rutin value.',
+    },
+
+    # Stage 3: Final score rumus 2
+    # Classes depend on is_rutin:
+    # - if is_rutin=1: [0, 10, 20, 30, 40]
+    # - if is_rutin=0: [0, 20, 40, 60]
+    'final_score_rumus2': {
+        'task': 'ordinal_classification',
+        'features': ['is_rutin', 'pemakaian', 'avg_pemakaian_gardu'],  # is_rutin as conditional feature
+        'model_family': 'tree',
+        'classes': [0, 10, 20, 30, 40, 60],  # All possible classes (union of both conditions)
+        'description': 'Ordinal score based on consumption vs gardu average. Classes differ by is_rutin value.',
+    },
+
+    # Stage 4: Anomaly score
+    # Calculated as: final_score_rumus1 + final_score_rumus2
     'anomaly_score': {
         'task': 'regression',
-        'features': ['is_rutin', 'pemakaian', 'baseline'],
-        'model_family': 'tree',
-        'postprocess': ['clip_0_100'],
-        'description': 'Deviation score between actual usage and baseline (0-100)',
-    },
-
-    # Stage 3: Anomaly detection
-    'is_anomaly': {
-        'task': 'binary_classification',
-        'features': ['anomaly_score', 'threshold_drop_consume'],
-        'threshold': 0.5,
-        'description': 'Binary anomaly decision based on anomaly_score and threshold',
-    },
-
-    # Stage 4a: Final score rumus 1
-    'final_score_rumus1': {
-        'task': 'regression',
-        'features': ['is_rutin', 'anomaly_score'],
-        'model_family': 'tree',
-        'postprocess': ['clip_0_100'],
-        'description': 'Severity score based on regularity and anomaly score',
-    },
-
-    # Stage 4b: Score rumus 2
-    'score_rumus2': {
-        'task': 'regression',
-        'features': ['is_rutin', 'avg_pemakaian_gardu', 'pemakaian'],
-        'model_family': 'tree',
-        'description': 'Contextual score compared to gardu average',
-    },
-
-    # Stage 5: Final score rumus 2
-    'final_score_rumus2': {
-        'task': 'regression',
-        'features': ['is_rutin', 'score_rumus2'],
-        'model_family': 'tree',
-        'postprocess': ['clip_0_100'],
-        'description': 'Final severity score based on regularity and gardu comparison',
-    },
-
-    # Stage 6: Anomaly type classification
-    'anomaly_type': {
-        'task': 'multiclass_classification',
         'features': ['final_score_rumus1', 'final_score_rumus2'],
-        'classes': ['baseline', 'gardu', 'both', 'none'],
-        'description': 'Root cause classification: baseline deviation, gardu deviation, both, or none',
-    },
-
-    # Stage 7: Severity level
-    'severity_level': {
-        'task': 'ordinal_classification',
-        'features': ['final_score_rumus1', 'final_score_rumus2'],
-        'classes': ['low', 'medium', 'high', 'critical'],
-        'description': 'Final severity categorization in ordinal order',
+        'model_family': 'tree',
+        'postprocess': ['clip_0_100'],
+        'description': 'Combined anomaly score (sum of final_score_rumus1 and final_score_rumus2)',
     },
 }
 
 # Pipeline execution order (models must execute in this order due to dependencies)
 PIPELINE_ORDER = [
     'is_rutin',
-    'anomaly_score',
-    'is_anomaly',
     'final_score_rumus1',
-    'score_rumus2',
     'final_score_rumus2',
-    'anomaly_type',
-    'severity_level',
+    'anomaly_score',
 ]
 
 # Training settings
